@@ -9,10 +9,8 @@ namespace SharpDistributions
     {
         public T Element { get; set; }
 
-        #region IProbabilisitctSetElement<T> Members
 
         public Distribution<T> Distribution { get; set; }
 
-        #endregion
     }
 }
