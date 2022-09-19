@@ -6,45 +6,38 @@ namespace SharpDistributions;
 
 public static class DistributionExtensions
 {
-    public static double Expectation<T>(this Distribution<T> source, int samplesCount) where T : INumber<T>,IDivisionOperators<T,double,double>
+    public static double Expectation<T>(this Distribution<T,double> source, int samplesCount)
+        where T : INumber<T>, IDivisionOperators<T, double, double>
     {
-        double ret = 0;
-        double n =  samplesCount;
-        ProbabilityDensity <T> density = source.Density;
-        var samples = source.Take(samplesCount);
-        foreach(var sample in samples)
+       return source.Expectation<T,double>(samplesCount); 
+    }
+    public static TProbability Expectation<T, TProbability>(this Distribution<T, TProbability> source, int samplesCount)
+        where TProbability :  IFloatingPoint<TProbability>
+        where T : INumber<T>,IDivisionOperators<T, TProbability, TProbability>
+    {
+        if (source.Density is { })
         {
-            var prob = sample;
-            if (density is { })
-            {
-                ret += density(prob) / n;
-            }
-            else
-            {
-                ret += prob / n;
-            }
+            return source.ExpectationUsingDensityFunction<T, TProbability>(samplesCount);
         }
-        
-        return ret;
+
+        var n = TProbability.CreateSaturating( samplesCount);
+        var samples = source.Take(samplesCount);
+        return samples.Aggregate(TProbability.Zero, (current, sample) => (current + sample / n));
     }
 
-    public static double GeneralExpectation<T>(this Distribution<T> source, int samplesCount)
+
+    public static TProbability ExpectationUsingDensityFunction<T, TProbability>(this Distribution<T, TProbability> source, int samplesCount)
+        where TProbability : IFloatingPoint<TProbability>
     {
-        double ret = 0;
-        double n = samplesCount;
-        ProbabilityDensity<T> density = source.Density;
+        var density = source.Density ?? throw new ArgumentNullException("source.Density");
+        var n = TProbability.CreateSaturating(samplesCount);
 
-        if (density is null)
-        {
-            throw new InvalidOperationException();
-        }
-        var samples = source.Take(samplesCount);
-        foreach (var sample in samples)
-        {
-            var prob = sample;  
-            ret += density(prob) / n;            
-        }
+        var samples = source.Take(samplesCount).Select(s => TProbability.CreateSaturating(density(s)));
+        return samples.Aggregate(TProbability.Zero, (current, sample) => (current + sample / n));
+    }
 
-        return ret;
+    public static double ExpectationUsingDensityFunction<T>(this Distribution<T, double> source, int samplesCount)
+    {
+       return source.ExpectationUsingDensityFunction<T,double>(samplesCount); 
     }
 }

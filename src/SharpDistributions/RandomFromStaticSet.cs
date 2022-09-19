@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 
 namespace SharpDistributions;
 
-public class RandomFromStaticSet<T> where T : IProbabilitySetElement<T>
+public class RandomFromStaticSet<T, TProbability> where T : IProbabilitySetElement<T, TProbability>
+where TProbability : IFloatingPoint<TProbability>
 {
     protected List<T> Elements;
 

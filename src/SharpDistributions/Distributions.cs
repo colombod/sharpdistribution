@@ -17,21 +17,21 @@ public class Distributions
     /// to ensure that is not reset. This ensures that all the sampling functions
     /// will use the same source of randomness.
     /// </summary>
-    private static readonly Distribution<double> Unit;
+    private static readonly Distribution<double,double> Unit;
 
     /// <summary>
     /// Static constructor. It prepares the internal generator.
     /// </summary>
     static Distributions()
     {
-        Unit = new Distribution<double>(CoreUniformFunction());
+        Unit = new Distribution<double, double>(CoreUniformSamplingFunction());
     }
 
     /// <summary>
     /// Definition of the core uniform function used to generate the samples.
     /// </summary>
     /// <returns>The unit sampling function</returns>
-    private static IEnumerator<double> CoreUniformFunction()
+    private static IEnumerator<double> CoreUniformSamplingFunction()
     {
         var rnd = new Random();
         while (true)
@@ -39,11 +39,12 @@ public class Distributions
     }
 
     #region Sampling Functions
+    
     /// <summary>
     /// The uniform sampling function between 0 and 1.
     /// </summary>
     /// <returns>The unit sampling function</returns>
-    public static IEnumerator<double> UnitUniformFunction()
+    public static IEnumerator<double> UnitUniformSamplingFunction()
     {
         // Note that we define a new enumeration to ensure that the uniform
         // distribution is untouched.
@@ -56,13 +57,13 @@ public class Distributions
     /// <param name="p">Probability of the Bernoulli used</param>
     /// <param name="n0">Number of trials</param>
     /// <returns>The binomial sampling function</returns>
-    public static IEnumerator<double> BinomialFunction(double p, int n0)
+    public static IEnumerator<double> BinomialSamplingFunction(double p, int n0)
     {
         var bernoulli = Bernoulli(p);
         while (true)
         {
             double ret = 0;
-            for (int i = 0; i < n0; i++)
+            for (var i = 0; i < n0; i++)
                 if (bernoulli.NextSample()) ret++;
             yield return ret;
             ret = 0;
@@ -75,10 +76,9 @@ public class Distributions
     /// <param name="a">Minimum value of the interval.</param>
     /// <param name="b">Maximum value of the interval.</param>
     /// <returns>The Uniform sampling function.</returns>
-    public static IEnumerator<double> UniformFunction(double a, double b)
+    public static IEnumerator<double> UniformSamplingFunction(double a, double b)
     {
-        foreach (double v in Unit)
-            yield return a + v * (b - a);
+        return Unit.Select(v => a + v * (b - a)).GetEnumerator();
     }
 
     /// <summary>
@@ -91,8 +91,7 @@ public class Distributions
     /// <returns>The point uniform sampling function.</returns>
     public static IEnumerator<double> PointUniformFunction()
     {
-        foreach (double v in Unit)
-            yield return v < 0.5 ? 0.0 : v;
+        return Unit.Select(v => v < 0.5 ? 0.0 : v).GetEnumerator();
     }
 
     /// <summary>
@@ -100,7 +99,7 @@ public class Distributions
     /// </summary>
     /// <param name="p">Probability of the Bernoulli toss.</param>
     /// <returns>The Bernoulli sampling function.</returns>
-    public static IEnumerator<bool> BernoulliFunction(double p)
+    public static IEnumerator<bool> BernoulliSamplingFunction(double p)
     {
         return Unit.Select(v => v <= p).GetEnumerator();
     }
@@ -109,7 +108,7 @@ public class Distributions
     /// Normal exponential sampling function.
     /// </summary>
     /// <returns>The normal exponential sampling function.</returns>
-    public static IEnumerator<double> NormalExponentialFunction()
+    public static IEnumerator<double> NormalExponentialSamplingFunction()
     {
         return Unit.Select(v => -Math.Log(v)).GetEnumerator();
     }
@@ -120,7 +119,7 @@ public class Distributions
     /// <param name="mean">Mean of the distribution</param>
     /// <param name="variance">Variance of the distribution.</param>
     /// <returns></returns>
-    public static IEnumerator<double> GaussianBoxMuellerFunction(double mean, double variance)
+    public static IEnumerator<double> GaussianBoxMuellerSamplingFunction(double mean, double variance)
     {
         while (true)
         {
@@ -136,7 +135,7 @@ public class Distributions
     /// <param name="mean">Mean of the distribution.</param>
     /// <param name="variance">Variance of the distribution.</param>
     /// <returns>The gaussian distribution.</returns>
-    public static IEnumerator<double> GaussianCentralFunction(double mean, double variance)
+    public static IEnumerator<double> GaussianCentralSamplingFunction(double mean, double variance)
     {
         while (true)
         {
@@ -154,9 +153,9 @@ public class Distributions
     /// </summary>
     /// <param name="p">The probability of the Bernoulli used.</param>
     /// <returns>The geometric sampling function.</returns>
-    public static IEnumerator<double> GeometricFunction(double p)
+    public static IEnumerator<double> GeometricSamplingFunction(double p)
     {
-        var bernoulli = Distributions.Bernoulli(p);
+        var bernoulli = Bernoulli(p);
         while (true)
         {
             var ret = 0.0;
@@ -174,7 +173,7 @@ public class Distributions
     /// <param name="mean">Mean of the distribution.</param>
     /// <param name="variance">Variance of the distribution.</param>
     /// <returns>The gaussian distribution.</returns>
-    public static IEnumerator<double> GaussianRejectionFunction(double mean, double variance)
+    public static IEnumerator<double> GaussianRejectionSamplingFunction(double mean, double variance)
     {
         var exp = NormalExponential();
         var bernoulliFair = Bernoulli(0.5);
@@ -193,16 +192,16 @@ public class Distributions
     /// A Bayes sampling function of a generic domain A. A probability function
     /// is required in order to define the probability of each element.
     /// </summary>
-    /// <typeparam name="A">The domain of values.</typeparam>
-    /// <param name="p">The probability function over A</param>
+    /// <typeparam name="TDomain">The domain of values.</typeparam>
+    /// <param name="p">The probability function over TDomain</param>
     /// <param name="c">Normalization factor (so that p can map over R+)</param>
     /// <param name="q">The elements to select from.</param>
     /// <returns>A sampling function over the given domain.</returns>
-    public static IEnumerator<A> BayesRejectionFunction<A>(ProbabilityDensity<A> p, double c, IEnumerator<A> q)
+    public static IEnumerator<TDomain> BayesRejectionSamplingFunction<TDomain>(ProbabilityDensity<TDomain,double> p, double c, IEnumerator<TDomain> q) 
     {
         foreach (var v in Unit)
         {
-            if (v < (p(q.Current) / c))
+            if (v < p(q.Current) / c)
             {
                 yield return q.Current;
             }
@@ -216,9 +215,9 @@ public class Distributions
     /// Unit uniform distribution.
     /// </summary>
     /// <returns>A distribution object that represents the unit distribution.</returns>
-    public static Distribution<double> UnitUniform()
+    public static Distribution<double,double> UnitUniform()
     {
-        return new Distribution<double>(UnitUniformFunction());
+        return new Distribution<double, double>(UnitUniformSamplingFunction());
     }
 
     /// <summary>
@@ -227,9 +226,9 @@ public class Distributions
     /// <param name="p">Probability of success of each toss.</param>
     /// <param name="n0">Number of tosses.</param>
     /// <returns>A distribution object that represents the Binomial distribution.</returns>
-    public static Distribution<double> Binomial(double p, int n0)
+    public static Distribution<double, double> Binomial(double p, int n0)
     {
-        return new Distribution<double>(BinomialFunction(p, n0));
+        return new Distribution<double, double>(BinomialSamplingFunction(p, n0));
     }
 
     /// <summary>
@@ -238,18 +237,18 @@ public class Distributions
     /// <param name="a">Minimum value of the interval.</param>
     /// <param name="b">Maximum value of the interval.</param>
     /// <returns>A distribution object that represents the Uniform distribution.</returns>
-    public static Distribution<double> Uniform(double a, double b)
+    public static Distribution<double, double> Uniform(double a, double b)
     {
-        return new Distribution<double>(UniformFunction(a, b));
+        return new Distribution<double, double>(UniformSamplingFunction(a, b));
     }
 
     /// <summary>
     /// This distribution is built on top of the PointUniformFunction sampling function.
     /// </summary>
     /// <returns>A distribution object that represents the point uniform distribution.</returns>
-    public static Distribution<double> PointUniform()
+    public static Distribution<double, double> PointUniform()
     {
-        return new Distribution<double>(PointUniformFunction());
+        return new Distribution<double, double>(PointUniformFunction());
     }
 
     /// <summary>
@@ -257,18 +256,18 @@ public class Distributions
     /// </summary>
     /// <param name="p">Probability of a win</param>
     /// <returns>A distribution object that represents the Bernoulli distribution.</returns>
-    public static Distribution<bool> Bernoulli(double p)
+    public static Distribution<bool, double> Bernoulli(double p)
     {
-        return new Distribution<bool>(BernoulliFunction(p), b => b ? 1: 0);
+        return new Distribution<bool, double>(BernoulliSamplingFunction(p), b => b ? 1.0: 0.0);
     }
 
     /// <summary>
     /// Normal exponential distribution.
     /// </summary>
     /// <returns>A distribution object that represents the normal exponential distribution.</returns>
-    public static Distribution<double> NormalExponential()
+    public static Distribution<double, double> NormalExponential()
     {
-        return new Distribution<double>(NormalExponentialFunction());
+        return new Distribution<double, double>(NormalExponentialSamplingFunction());
     }
 
     /// <summary>
@@ -277,9 +276,9 @@ public class Distributions
     /// <param name="mean">Mean of the distribution</param>
     /// <param name="variance">Variance of the distribution.</param>
     /// <returns>A distribution object that represents the Gaussian distribution.</returns>
-    public static Distribution<double> GaussianBoxMueller(double mean, double variance)
+    public static Distribution<double, double> GaussianBoxMueller(double mean, double variance)
     {
-        return new Distribution<double>(GaussianBoxMuellerFunction(mean, variance));
+        return new Distribution<double, double>(GaussianBoxMuellerSamplingFunction(mean, variance));
     }
 
     /// <summary>
@@ -288,9 +287,9 @@ public class Distributions
     /// <param name="mean">Mean of the distribution</param>
     /// <param name="variance">Variance of the distribution.</param>
     /// <returns>A distribution object that represents the Gaussian distribution.</returns>
-    public static Distribution<double> GaussianCentral(double mean, double variance)
+    public static Distribution<double, double> GaussianCentral(double mean, double variance)
     {
-        return new Distribution<double>(GaussianCentralFunction(mean, variance));
+        return new Distribution<double, double>(GaussianCentralSamplingFunction(mean, variance));
     }
 
     /// <summary>
@@ -298,9 +297,9 @@ public class Distributions
     /// </summary>
     /// <param name="p">Probability of success of each toss.</param>
     /// <returns>A distribution object that represents the Geometric distribution.</returns>
-    public static Distribution<double> Geometric(double p)
+    public static Distribution<double, double> Geometric(double p)
     {
-        return new Distribution<double>(GeometricFunction(p));
+        return new Distribution<double, double>(GeometricSamplingFunction(p));
     }
 
     /// <summary>
@@ -309,9 +308,9 @@ public class Distributions
     /// <param name="mean">Mean of the distribution</param>
     /// <param name="variance">Variance of the distribution.</param>
     /// <returns>A distribution object that represents the Gaussian distribution.</returns>
-    public static Distribution<double> GaussianRejection(double mean, double variance)
+    public static Distribution<double, double> GaussianRejection(double mean, double variance)
     {
-        return new Distribution<double>(GaussianRejectionFunction(mean, variance));
+        return new Distribution<double, double>(GaussianRejectionSamplingFunction(mean, variance));
     }
 
     /// <summary>
@@ -322,9 +321,9 @@ public class Distributions
     /// <param name="c">Normalization factor (so that p can map over R+)</param>
     /// <param name="q">The elements to select from.</param>
     /// <returns>A distribution object that represents the Bayes distribution over a domain A.</returns>
-    public static Distribution<TDomain> BayesRejection<TDomain>(ProbabilityDensity<TDomain> p, double c, IEnumerator<TDomain> q)
+    public static Distribution<TDomain, double> BayesRejection<TDomain>(ProbabilityDensity<TDomain, double> p, double c, IEnumerator<TDomain> q)
     {
-        return new Distribution<TDomain>(BayesRejectionFunction(p, c, q));
+        return new Distribution<TDomain, double>(BayesRejectionSamplingFunction(p, c, q));
     }
     #endregion
 

@@ -7,14 +7,9 @@ using SharpDistributions.Sample01;
 // Use directly of Sampling Functions
 // We don't need Distribution extra facilities;
 var b = Distributions.Bernoulli(0.3);
-var count = 0;
-for (var i = 0; i < 100000; i++)
-{
-    if (b.NextSample()) count++;
-}
-Console.WriteLine(count);
 
-Console.WriteLine(Distributions.NormalExponential().Expectation(200));
+Console.WriteLine(Distributions.GaussianCentral(0.5,0.2).Expectation(20000));
+Console.WriteLine(b.ExpectationUsingDensityFunction(20000));
 
 var a = Army.ArmyElements().Take(20000).ToList();
             
@@ -67,8 +62,8 @@ namespace SharpDistributions.Sample01
         {
             var ret = new Army();
             var b = Distributions.Bernoulli(0.2);
-            var tg = new Distribution<Tank>(TankSamplingFunction());
-            var sg = new Distribution<Soldier>(SoldierSamplingFunction());
+            var tg = new Distribution<Tank,double>(TankSamplingFunction());
+            var sg = new Distribution<Soldier,double>(SoldierSamplingFunction());
             for (var i = 0; i < size; i++)
             {
                 if (b.NextSample())
@@ -91,8 +86,8 @@ namespace SharpDistributions.Sample01
         public static IEnumerator<IArmyElement> ArmySamplingFunction()
         {
             var b = Distributions.Bernoulli(0.2);
-            var tg = new Distribution<Tank>(TankSamplingFunction());
-            var sg = new Distribution<Soldier>(SoldierSamplingFunction());
+            var tg = new Distribution<Tank,double>(TankSamplingFunction());
+            var sg = new Distribution<Soldier,double>(SoldierSamplingFunction());
             while (true)
             {
                 if (b.NextSample())

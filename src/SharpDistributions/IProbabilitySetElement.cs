@@ -1,6 +1,8 @@
+using System.Numerics;
+
 namespace SharpDistributions;
 
-public interface IProbabilitySetElement<T>
+public interface IProbabilitySetElement<T, TProbability> where TProbability : IFloatingPoint<TProbability>
 {
-    Distribution<T> Distribution { get; set; }
+    Distribution<T, TProbability> Distribution { get; set; }
 }

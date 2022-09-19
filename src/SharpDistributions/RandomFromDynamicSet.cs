@@ -1,3 +1,5 @@
+using System.Numerics;
+
 namespace SharpDistributions;
 
 /// <summary>
@@ -6,7 +8,8 @@ namespace SharpDistributions;
 /// distribution updated.
 /// </summary>
 /// <typeparam name="T"></typeparam>
-public class RandomFromDynamicSet<T> : RandomFromStaticSet<T> where T : IProbabilitySetElement<T>
+public class RandomFromDynamicSet<T, TProbability> : RandomFromStaticSet<T, TProbability> where T : IProbabilitySetElement<T, TProbability>
+where TProbability : IFloatingPoint<TProbability>
 {
     public RandomFromDynamicSet(int populationSize, params T[] elements)
         : base(elements)

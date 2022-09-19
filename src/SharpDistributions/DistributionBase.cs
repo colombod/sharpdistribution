@@ -1,5 +1,5 @@
-using System;
 using System.Collections.Generic;
+using System.Numerics;
 
 namespace SharpDistributions;
 
@@ -13,27 +13,18 @@ namespace SharpDistributions;
 /// Distribution&lt;double&gt; = new Distribution&lt;double&gt;(Distributions.BernoulliDistribution(0.5));
 /// </example>
 /// </summary>
-public class Distribution<T> : IEnumerable<T>
+public class Distribution<T,TProbability> : IEnumerable<T>
+where TProbability : IFloatingPoint<TProbability>
 {
-    /// <summary>
-    /// Sample function corresponding to this distribution.
-    /// </summary>
-    private readonly IEnumerator<T> _samplingFunction;
-
-    /// <summary>
-    /// Probability function. If null the identity is assumed.
-    /// </summary>
-    private readonly ProbabilityDensity<T> _density;
-
     /// <summary>
     /// Sampling function associated with the distribution.
     /// </summary>
-    public IEnumerator<T> SamplingFunction => _samplingFunction;
+    public IEnumerator<T> SamplingFunction { get; }
 
     /// <summary>
     /// Return the density function to be used.
     /// </summary>
-    public ProbabilityDensity<T> Density => _density;
+    public ProbabilityDensity<T, TProbability> Density { get; }
 
     /// <summary>
     /// It builds a distribution given a sampling function.
@@ -53,11 +44,11 @@ public class Distribution<T> : IEnumerable<T>
     /// Probability function associated with the elements (if known).
     /// If null the identity distribution is assumed.
     /// </param>
-    public Distribution(IEnumerator<T> samplingFunction, ProbabilityDensity<T> d)
+    public Distribution(IEnumerator<T> samplingFunction, ProbabilityDensity<T, TProbability> d)
     {
-        _density = d;
-        _samplingFunction = samplingFunction;
-        _samplingFunction.MoveNext();
+        Density = d;
+        SamplingFunction = samplingFunction;
+        SamplingFunction.MoveNext();
     }
     
     /// <summary>
@@ -66,14 +57,14 @@ public class Distribution<T> : IEnumerable<T>
     /// <returns>A sample from the distribution.</returns>
     public T NextSample()
     {
-        _samplingFunction.MoveNext();
-        return _samplingFunction.Current;
+        SamplingFunction.MoveNext();
+        return SamplingFunction.Current;
     }
 
     /// <summary>
     /// Return the current sample from the sampling function.
     /// </summary>
-    public T Sample => _samplingFunction.Current;
+    public T Sample => SamplingFunction.Current;
 
     #region IEnumerable<T> Members
 
@@ -88,7 +79,7 @@ public class Distribution<T> : IEnumerable<T>
     /// <returns>The enumerator associated with the sampling function.</returns>
     public IEnumerator<T> GetEnumerator()
     {
-        return _samplingFunction;
+        return SamplingFunction;
     }
 
     #endregion
@@ -102,7 +93,7 @@ public class Distribution<T> : IEnumerable<T>
     /// <returns>The enumerator associated with the sampling function.</returns>
     System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
     {
-        return _samplingFunction;
+        return SamplingFunction;
     }
 
     #endregion
