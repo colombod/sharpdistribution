@@ -259,7 +259,7 @@ public class Distributions
     /// <returns>A distribution object that represents the Bernoulli distribution.</returns>
     public static Distribution<bool> Bernoulli(double p)
     {
-        return new Distribution<bool>(BernoulliFunction(p));
+        return new Distribution<bool>(BernoulliFunction(p), b => b ? 1: 0);
     }
 
     /// <summary>

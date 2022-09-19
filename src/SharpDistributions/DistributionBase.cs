@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace SharpDistributions;
@@ -58,22 +59,7 @@ public class Distribution<T> : IEnumerable<T>
         _samplingFunction = samplingFunction;
         _samplingFunction.MoveNext();
     }
-        
-    public double Expectation(int n)
-    {
-        double ret = 0;
-
-        for (var i = 0; i < n; i++)
-        {
-            if (_density == null)
-                ret += (double)(object)_samplingFunction.Current;
-            else
-                ret += _density(_samplingFunction.Current);
-            _samplingFunction.MoveNext();
-        }
-        return ret / n;
-    }
-
+    
     /// <summary>
     /// Return the next sample from the distribution.
     /// </summary>

@@ -14,6 +14,8 @@ for (var i = 0; i < 100000; i++)
 }
 Console.WriteLine(count);
 
+Console.WriteLine(Distributions.NormalExponential().Expectation(200));
+
 var a = Army.ArmyElements().Take(20000).ToList();
             
 var sa = a.OfType<SoldierTypeA>().Count();
