@@ -1,50 +1,49 @@
 using System;
 using System.Collections.Generic;
 
-namespace SharpDistributions
+namespace SharpDistributions;
+
+public class RandomFromStaticSet<T> where T : IProbabilitySetElement<T>
 {
-    public class RandomFromStaticSet<T> where T : IProbabilitySetElement<T>
+    protected List<T> Elements;
+
+    public RandomFromStaticSet(params T[] elements)
     {
-        protected List<T> Elements;
+        Elements = new List<T>();
+        Elements.AddRange(elements);
+        NormalizeSet();
+    }
 
-        public RandomFromStaticSet(params T[] elements)
+    public void NormalizeSet()
+    {
+        var total = 0.0;
+        foreach (var element in Elements)
         {
-            Elements = new List<T>();
-            Elements.AddRange(elements);
-            NormalizeSet();
+            //total += element.Distribution;
         }
-
-        public void NormalizeSet()
+        if (Math.Abs(total - 1.0) > double.Epsilon)
         {
-            var total = 0.0;
-            foreach (var element in Elements)
-            {
-                //total += element.Distribution;
-            }
-            if (Math.Abs(total - 1.0) > double.Epsilon)
-            {
-                foreach (T element in Elements)
-                {
-                    //element.Distribution /= total;
-                }
-            }
-        }
-
-        public virtual object[] GetNext()
-        {
-            var max_prob = 0.0;
-            var selection = default(T);
             foreach (T element in Elements)
             {
-                var prob = element.Distribution.NextSample();
-                //if (prob > max_prob)
-                //{
-                //    selection = element;
-                //    max_prob = prob;
-                //}
+                //element.Distribution /= total;
             }
-
-            return null;
         }
+    }
+
+    public virtual object[] GetNext()
+    {
+        var max_prob = 0.0;
+        var selection = default(T);
+        foreach (T element in Elements)
+        {
+            var prob = element.Distribution.NextSample();
+            //if (prob > max_prob)
+            //{
+            //    selection = element;
+            //    max_prob = prob;
+            //}
+        }
+
+        return null;
     }
 }
