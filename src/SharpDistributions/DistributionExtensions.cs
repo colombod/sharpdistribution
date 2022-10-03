@@ -29,10 +29,17 @@ public static class DistributionExtensions
     public static TProbability ExpectationUsingDensityFunction<T, TProbability>(this Distribution<T, TProbability> source, int samplesCount)
         where TProbability : IFloatingPoint<TProbability>
     {
-        var density = source.Density ?? throw new ArgumentNullException("source.Density");
+        return source.ExpectationUsingDensityFunction(source.Density, samplesCount);
+    }
+
+    public static TProbability ExpectationUsingDensityFunction<T, TProbability>(this Distribution<T, TProbability> source, ProbabilityDensity<T,TProbability> probabilityDensity, int samplesCount)
+        where TProbability : IFloatingPoint<TProbability>
+    {
+        if (probabilityDensity == null) throw new ArgumentNullException(nameof(probabilityDensity));
+
         var n = TProbability.CreateSaturating(samplesCount);
 
-        var samples = source.Take(samplesCount).Select(s => TProbability.CreateSaturating(density(s)));
+        var samples = source.Take(samplesCount).Select(s => TProbability.CreateSaturating(probabilityDensity(s)));
         return samples.Aggregate(TProbability.Zero, (current, sample) => (current + sample / n));
     }
 
